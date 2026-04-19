@@ -10,6 +10,32 @@ router.get('/', (req, res) => {
   res.json(members);
 });
 
+// GET /api/team/workload — all members with task counts by priority
+router.get('/workload', (req, res) => {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT
+      tm.id, tm.name, tm.role, tm.email, tm.avatar_color,
+      COUNT(CASE WHEN t.priority = 'urgent' THEN 1 END) AS urgent,
+      COUNT(CASE WHEN t.priority = 'high'   THEN 1 END) AS high,
+      COUNT(CASE WHEN t.priority = 'medium' THEN 1 END) AS medium,
+      COUNT(CASE WHEN t.priority = 'low'    THEN 1 END) AS low,
+      COUNT(t.id) AS total
+    FROM team_members tm
+    LEFT JOIN tasks t ON t.assignee_id = tm.id AND t.status != 'done'
+    GROUP BY tm.id
+    ORDER BY tm.id
+  `).all();
+
+  const members = rows.map(r => ({
+    id: r.id, name: r.name, role: r.role, email: r.email, avatar_color: r.avatar_color,
+    task_counts: { urgent: r.urgent, high: r.high, medium: r.medium, low: r.low, total: r.total },
+    is_overloaded: (r.urgent + r.high) >= 5,
+  }));
+
+  res.json(members);
+});
+
 // GET /api/team/:id — single team member
 router.get('/:id', (req, res) => {
   const db = getDb();
