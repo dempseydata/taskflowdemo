@@ -1,11 +1,28 @@
+import { useState, useEffect } from 'react';
 import { Routes, Route, NavLink } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import Tasks from './pages/Tasks';
 import Team from './pages/Team';
 import Settings from './pages/Settings';
+import { api } from './utils/api-client';
 
 function App() {
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    api.get('/settings').then(data => {
+      if (data?.theme === 'dark') {
+        setTheme('dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
   return (
     <div className="app-layout">
       <aside className="sidebar">
