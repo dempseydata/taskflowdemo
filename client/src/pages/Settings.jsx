@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import Spinner from '../components/common/Spinner';
+import { api } from '../utils/api-client';
 
 const toggleRowStyle = {
   display: 'flex',
@@ -34,8 +36,33 @@ const toggleKnobStyle = (active) => ({
 
 export default function Settings() {
   const { data: settings, loading } = useApi('/settings');
+  const [localSettings, setLocalSettings] = useState({});
+
+  useEffect(() => {
+    if (settings) setLocalSettings(settings);
+  }, [settings]);
 
   if (loading) return <Spinner />;
+
+  async function handleToggle(setting, currentActive) {
+    const newActive = !currentActive;
+    const update = setting.isTheme
+      ? { theme: newActive ? 'dark' : 'light' }
+      : { [setting.key]: String(newActive) };
+
+    setLocalSettings(prev => ({
+      ...prev,
+      ...(setting.isTheme ? { theme: newActive ? 'dark' : 'light' } : { [setting.key]: String(newActive) }),
+    }));
+
+    if (setting.isTheme) {
+      const newTheme = newActive ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    }
+
+    await api.put('/settings', update);
+  }
 
   const settingsConfig = [
     { key: 'notifications_enabled', label: 'Enable Notifications', description: 'Receive notifications for task updates and assignments' },
@@ -72,8 +99,8 @@ export default function Settings() {
 
         {settingsConfig.map((setting) => {
           const active = setting.isTheme
-            ? settings?.theme === 'dark'
-            : settings?.[setting.key] === 'true';
+            ? localSettings?.theme === 'dark'
+            : localSettings?.[setting.key] === 'true';
           return (
             <div key={setting.key} style={toggleRowStyle}>
               <div>
@@ -82,7 +109,7 @@ export default function Settings() {
                   {setting.description}
                 </div>
               </div>
-              <button style={toggleStyle(active)} aria-label={setting.label}>
+              <button style={toggleStyle(active)} aria-label={setting.label} onClick={() => handleToggle(setting, active)}>
                 <div style={toggleKnobStyle(active)} />
               </button>
             </div>

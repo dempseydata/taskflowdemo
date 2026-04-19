@@ -77,3 +77,14 @@
   --transition-fast: 150ms ease;
   --transition-base: 200ms ease;
 }
+
+[data-theme="dark"] {
+  --color-bg: #111827;
+  --color-surface: #1f2937;
+  --color-surface-hover: #374151;
+  --color-border: #374151;
+  --color-border-light: #4b5563;
+  --color-text: #f9fafb;
+  --color-text-secondary: #d1d5db;
+  --color-text-muted: #9ca3af;
+}
